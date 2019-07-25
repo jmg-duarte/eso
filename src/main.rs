@@ -3,6 +3,8 @@ use clap::App;
 mod cli;
 mod vm;
 mod io;
+mod compiler;
+mod instruction;
 
 fn main() {
     let yml = clap::load_yaml!("cli.yml");

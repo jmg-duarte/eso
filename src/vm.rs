@@ -1,18 +1,19 @@
 use std::io::{Read, Write};
+use crate::instruction::*;
 
 
-pub struct Machine<'a> {
+pub struct Machine {
     int_ptr: usize,
     data_ptr: usize,
     memory: [u8; 30000],
     buffer: [u8; 1],
-    code: &'a str,
+    code: Vec<FoldedInstruction>,
     input: Box<Read>,
     output: Box<Write>,
 }
 
-impl Machine<'_> {
-    pub fn new(code: &str, input: Box<Read>, output: Box<Write>) -> Machine {
+impl Machine {
+    pub fn new(code: Vec<FoldedInstruction>, input: Box<Read>, output: Box<Write>) -> Machine {
         Machine {
             int_ptr: 0,
             data_ptr: 0,
@@ -26,55 +27,37 @@ impl Machine<'_> {
 
     pub fn execute(&mut self) {
         while self.int_ptr < self.code.len() {
-            let instruction = self.code.chars().nth(self.int_ptr);
-            
-            match instruction {
-                Some('+') => self.memory[self.data_ptr] += 1,
-                Some('-') => self.memory[self.data_ptr] -= 1,
-                Some('>') => self.data_ptr += 1,
-                Some('<') => self.data_ptr -= 1,
-                Some(',') => self.read_char(),
-                Some('.') => self.put_char(),
-                Some('[') => self.jmp_zero(),
-                Some(']') => self.jmp_not_zero(),
-                None => panic!("error parsing the source code"),
-                _ => {}
-            };
-
+            let folded_inst: FoldedInstruction = self.code[self.int_ptr];
+            match folded_inst.instruction {
+                Instruction::Plus => self.memory[self.data_ptr] += folded_inst.argument as u8,
+                Instruction::Minus => self.memory[self.data_ptr] -= folded_inst.argument as u8,
+                Instruction::Right => self.data_ptr += folded_inst.argument as usize,
+                Instruction::Left => self.data_ptr -= folded_inst.argument as usize,
+                Instruction::PutChar => {
+                    for _ in 0..folded_inst.argument {
+                        self.put_char()
+                    }
+                }
+                Instruction::ReadChar => {
+                    for _ in 0..folded_inst.argument {
+                        self.read_char()
+                    }
+                }
+                Instruction::JumpIfZero => {
+                    if self.memory[self.data_ptr] == 0 {
+                        self.int_ptr = folded_inst.argument as usize;
+                        continue;
+                    }
+                }
+                Instruction::JumpIfNotZero => {
+                    if self.memory[self.data_ptr] != 0 {
+                        self.int_ptr = folded_inst.argument as usize;
+                        continue;
+                    }
+                }
+            }
             self.int_ptr += 1;
         }
-    }
-
-    fn jmp_zero(&mut self) {
-        if self.memory[self.data_ptr] == 0 {
-            let mut depth = 1;
-            while depth != 0 {
-                self.int_ptr += 1;
-                let instruction = self.code.chars().nth(self.int_ptr);
-                match instruction {
-                    Some('[') => depth += 1,
-                    Some(']') => depth -= 1,
-                    None => panic!("error parsing the source code"),
-                    _ => {}
-                }
-            }
-        };
-    }
-
-    fn jmp_not_zero(&mut self) {
-        if self.memory[self.data_ptr] != 0 {
-            let mut depth = 1;
-            while depth != 0 {
-                self.int_ptr -= 1;
-                let instruction = self.code.chars().nth(self.int_ptr);
-                match instruction {
-                    Some(']') => depth += 1,
-                    Some('[') => depth -= 1,
-                    None => panic!("error parsing the source code"),
-                    _ => {}
-                }
-            }
-        };
     }
 
     fn read_char(&mut self) {
@@ -107,7 +90,7 @@ impl Machine<'_> {
         }
         let f = self.output.flush();
         match f {
-            Ok(()) => {},
+            Ok(()) => {}
             Err(e) => panic!(e),
         }
     }
