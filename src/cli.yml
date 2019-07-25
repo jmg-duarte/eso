@@ -3,3 +3,9 @@ name: eso
 settings: 
   - ArgRequiredElseHelp
 
+args: 
+  - file:
+      help: Source code file
+      index: 1
+      required: true
+      # takes_value: true
