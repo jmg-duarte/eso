@@ -1,6 +1,5 @@
-use std::io::{Read, Write};
 use crate::instruction::*;
-
+use std::io::{Read, Write};
 
 pub struct Machine {
     int_ptr: usize,
@@ -88,10 +87,10 @@ impl Machine {
             }
             Err(e) => panic!(e),
         }
-        let f = self.output.flush();
-        match f {
-            Ok(()) => {}
-            Err(e) => panic!(e),
-        }
+        // let f = self.output.flush();
+        // match f {
+        //     Ok(()) => {}
+        //     Err(e) => panic!(e),
+        // }
     }
 }

@@ -10,8 +10,8 @@ pub fn run(matches: ArgMatches) {
     let mut compiler = compiler::Compiler::new(&source_code);
     let mut bf_vm = vm::Machine::new(
         compiler.compile(),
-        Box::new(std::io::stdin()),
-        Box::new(std::io::stdout()),
+        Box::new(std::io::BufReader::new(std::io::stdin())),
+        Box::new(std::io::BufWriter::new(std::io::stdout())),
     );
     bf_vm.execute();
 }
